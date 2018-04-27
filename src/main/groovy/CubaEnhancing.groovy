@@ -23,7 +23,8 @@ import org.gradle.api.plugins.JavaPlugin
 class CubaEnhancing extends CubaEnhancingTask {
 
     CubaEnhancing() {
-        setDescription('Enhances persistent classes')
+        // todo: Delete class. Enhancing is performed by CubaEnhancingAction now
+        /*setDescription('Enhances persistent classes')
         setGroup('Compile')
 
         srcRoot = 'src'
@@ -31,6 +32,6 @@ class CubaEnhancing extends CubaEnhancingTask {
         sourceSet = project.sourceSets.main
 
         dependsOn(project.tasks.getByPath(JavaPlugin.COMPILE_JAVA_TASK_NAME))
-        project.tasks.getByPath(JavaPlugin.CLASSES_TASK_NAME).dependsOn(this)
+        project.tasks.getByPath(JavaPlugin.CLASSES_TASK_NAME).dependsOn(this)*/
     }
 }

@@ -29,6 +29,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.ResolvedDependency
 import org.gradle.api.plugins.BasePlugin
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.bundling.Zip
@@ -522,7 +523,8 @@ class CubaPlugin implements Plugin<Project> {
                     compileClasspath = compileClasspath + project.configurations.provided + project.configurations.jdbc
                 }
                 resources { srcDir 'src' }
-                output.dir("$project.buildDir/enhanced-classes/main")
+                // discuss: it's not clear why "enhances-classes" was set as output dir
+                output.dir("$project.buildDir/classes/java/main")
             }
             test {
                 java {
@@ -530,7 +532,8 @@ class CubaPlugin implements Plugin<Project> {
                     compileClasspath = compileClasspath + project.configurations.provided + project.configurations.jdbc
                 }
                 resources { srcDir 'test' }
-                output.dir("$project.buildDir/enhanced-classes/test")
+                // discuss: it's not clear why "enhances-classes" was set as output dir
+                output.dir("$project.buildDir/classes/java/test")
             }
         }
 
@@ -538,6 +541,12 @@ class CubaPlugin implements Plugin<Project> {
             options.compilerArgs << "-Xlint:-options"
             options.encoding = StandardCharsets.UTF_8.name()
         }
+
+        // discuss: probably can be refactored
+        project.tasks.findByName(JavaPlugin.COMPILE_JAVA_TASK_NAME)
+                .doLast(new CubaEnhancingAction(project))
+        project.tasks.findByName(JavaPlugin.COMPILE_TEST_JAVA_TASK_NAME)
+                .doLast(new CubaEnhancingAction(project))
 
         project.tasks.withType(Javadoc) {
             options.encoding = StandardCharsets.UTF_8.name()
@@ -607,7 +616,8 @@ class CubaPlugin implements Plugin<Project> {
             project.idea.module.inheritOutputDirs = true
 
             // Enhanced classes library entry must go before source folder
-            project.idea.module.iml.withXml { provider ->
+            // discuss: it seems that this block is redundant now
+            /*project.idea.module.iml.withXml { provider ->
                 Node rootNode = (Node) provider.node.component.find { it.@name == 'NewModuleRootManager' }
 
                 int srcIdx = rootNode.children().findIndexOf {
@@ -634,7 +644,7 @@ class CubaPlugin implements Plugin<Project> {
                 }
                 moveBeforeSources('main')
                 moveBeforeSources('test')
-            }
+            }*/
         }
 
         if (project.hasProperty('eclipse')) {
@@ -642,11 +652,12 @@ class CubaPlugin implements Plugin<Project> {
 
             project.eclipse.classpath {
                 plusConfigurations += [project.configurations.provided]
-                file.whenMerged { classpath ->
+                // discuss: it seems that this block is redundant now
+                /*file.whenMerged { classpath ->
                     classpath.entries.removeAll { entry ->
                         entry.path.contains('build/enhanced-classes/main')
                     }
-                }
+                }*/
             }
 
             project.eclipse.project.file.withXml { provider ->
@@ -677,7 +688,7 @@ class CubaPlugin implements Plugin<Project> {
                 if (project.name.endsWith('-global')) {
                     Node entry = root.appendNode('classpathentry')
                     entry.@kind = 'lib'
-                    entry.@path = "$project.buildDir/enhanced-classes/main"
+                    /*entry.@path = "$project.buildDir/enhanced-classes/main"*/
                     entry.@exported = 'true'
 
                     root.children().remove(entry)

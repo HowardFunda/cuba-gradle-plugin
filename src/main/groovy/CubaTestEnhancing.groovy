@@ -23,7 +23,8 @@ import org.gradle.api.tasks.SourceSet
 class CubaTestEnhancing extends CubaEnhancingTask {
 
     CubaTestEnhancing() {
-        setDescription('Enhances persistent test classes')
+        // todo: Delete class. Enhancing is performed by CubaEnhancingAction now
+        /*setDescription('Enhances persistent test classes')
         setGroup('Compile')
 
         srcRoot = 'test'
@@ -37,6 +38,6 @@ class CubaTestEnhancing extends CubaEnhancingTask {
         // move enhanced classes to the beginning of test classpath
         SourceSet testSourceSet = project.sourceSets.test
         testSourceSet.runtimeClasspath =
-                project.files('build/enhanced-classes/test') + testSourceSet.runtimeClasspath
+                project.files('build/enhanced-classes/test') + testSourceSet.runtimeClasspath*/
     }
 }
