@@ -59,29 +59,17 @@ class CubaEnhancingAction implements Action<Task> {
     CubaEnhancingAction(Project project) {
         this.project = project
 
-        if (!project.name.contains("tests")) {
-            srcRoot = 'src'
-            classesRoot = 'main'
-            sourceSet = project.sourceSets.main
-        } else {
-            srcRoot = 'test'
-            classesRoot = 'test'
-            sourceSet = project.sourceSets.test
-        }
+        srcRoot = 'src'
+        classesRoot = 'main'
+        sourceSet = project.sourceSets.main
 
         enhancedDirPath = "$project.buildDir/enhanced-classes/$classesRoot"
     }
 
     @Override
     void execute(Task task) {
-        // todo: remove
-        log(' >>> Start enhancing')
-        List<String> enhancedClassesFqn = enhanceClasses()
-
-        // todo: remove
-        log(' >>> Enhancing finished. Replace default classes by enhanced versions')
-        replaceClasses(enhancedClassesFqn)
-
+        def enhancedClasses = enhanceClasses()
+        replaceClasses(enhancedClasses)
     }
 
     protected List<String> enhanceClasses() {
@@ -194,19 +182,10 @@ class CubaEnhancingAction implements Action<Task> {
             }
         }
 
-        // todo: remove
-        log(' >>> Default classes are replaced by enhanced versions!')
-
-        // todo: remove
-        log(" >>> Deleting directory with enhanced classes: $enhancedDirPath")
-
         try {
             FileUtils.deleteDirectory(new File(enhancedDirPath))
-            // todo: remove
-            log(" >>> Directory with enhanced classes is deleted successfully!")
-        } catch (IOException e) {
-            // todo: remove
-            log(" >>> Unable to delete directory with enhanced classes: $e.message")
+        } catch (IOException ignored) {
+            // todo: log
         }
     }
 
@@ -332,7 +311,6 @@ class CubaEnhancingAction implements Action<Task> {
     private List<File> getOwnMetadataXmlFiles() {
         List<File> files = []
 
-        // discuss: it seems that we should check if metadataXml & metadataConfig exist in the same time
         if (metadataXml) {
             File f = new File(metadataXml)
             if (f.exists()) {
@@ -362,16 +340,5 @@ class CubaEnhancingAction implements Action<Task> {
     // todo: enable correct logging
     private void log(String message) {
         println("$project.name $message")
-    }
-
-    // discuss: it was used for @Input & @OutputFiles actions. It seems they are redundant now
-    private List getPersistentEntities(List<File> persistenceXmlList) {
-        List resultList = []
-        persistenceXmlList.each { file ->
-            def persistence = new XmlParser().parse(file)
-            def pu = persistence.'persistence-unit'[0]
-            resultList.addAll(pu.'class'.collect { it.value()[0] })
-        }
-        return resultList
     }
 }

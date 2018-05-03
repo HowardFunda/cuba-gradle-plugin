@@ -523,7 +523,6 @@ class CubaPlugin implements Plugin<Project> {
                     compileClasspath = compileClasspath + project.configurations.provided + project.configurations.jdbc
                 }
                 resources { srcDir 'src' }
-                // discuss: it's not clear why "enhances-classes" was set as output dir
                 output.dir("$project.buildDir/classes/java/main")
             }
             test {
@@ -532,7 +531,6 @@ class CubaPlugin implements Plugin<Project> {
                     compileClasspath = compileClasspath + project.configurations.provided + project.configurations.jdbc
                 }
                 resources { srcDir 'test' }
-                // discuss: it's not clear why "enhances-classes" was set as output dir
                 output.dir("$project.buildDir/classes/java/test")
             }
         }
@@ -542,7 +540,6 @@ class CubaPlugin implements Plugin<Project> {
             options.encoding = StandardCharsets.UTF_8.name()
         }
 
-        // discuss: probably can be refactored
         project.tasks.findByName(JavaPlugin.COMPILE_JAVA_TASK_NAME)
                 .doLast(new CubaEnhancingAction(project))
         project.tasks.findByName(JavaPlugin.COMPILE_TEST_JAVA_TASK_NAME)
@@ -563,7 +560,7 @@ class CubaPlugin implements Plugin<Project> {
             project.task([type: CubaBuildInfo], BUILD_INFO_TASK_NAME)
         }
 
-        if (project.name.endsWith('-core')) {
+        if (project.name.endsWith('-core') || project.name.endsWith('core-tests')) {
             File dbDir = new File(project.projectDir, "db")
             def assembleDbScriptsTask = project.task([type: CubaDbScriptsAssembling], ASSEMBLE_DB_SCRIPTS_TASK_NAME)
             project.assemble.dependsOn(assembleDbScriptsTask)
@@ -614,37 +611,6 @@ class CubaPlugin implements Plugin<Project> {
             project.idea.module.scopes += [PROVIDED: [plus: providedConfs, minus: []]]
 
             project.idea.module.inheritOutputDirs = true
-
-            // Enhanced classes library entry must go before source folder
-            // discuss: it seems that this block is redundant now
-            /*project.idea.module.iml.withXml { provider ->
-                Node rootNode = (Node) provider.node.component.find { it.@name == 'NewModuleRootManager' }
-
-                int srcIdx = rootNode.children().findIndexOf {
-                    it instanceof Node && it.name() == 'orderEntry' && it.@type == 'sourceFolder'
-                }
-
-                def moveBeforeSources = { String dir ->
-                    Node enhNode = (Node) rootNode.children().find {
-                        it instanceof Node && it.name() == 'orderEntry' && it.@type == 'module-library' &&
-                                it.library.CLASSES.root.@url.contains('file://$MODULE_DIR$/build/enhanced-classes/' + dir)
-                    }
-                    if (!enhNode && project.name.endsWith('-global')) {
-                        enhNode = new Node(rootNode, 'orderEntry', [type: 'module-library', scope: 'RUNTIME'])
-                        Node libraryNode = new Node(enhNode, 'library')
-                        Node classesNode = new Node(libraryNode, 'CLASSES')
-                        new Node(classesNode, 'root', ['url': 'file://$MODULE_DIR$/build/enhanced-classes/' + dir])
-                        new Node(libraryNode, 'JAVADOC')
-                        new Node(libraryNode, 'SOURCES')
-                    }
-                    if (enhNode) {
-                        rootNode.children().remove(enhNode)
-                        rootNode.children().add(srcIdx, enhNode)
-                    }
-                }
-                moveBeforeSources('main')
-                moveBeforeSources('test')
-            }*/
         }
 
         if (project.hasProperty('eclipse')) {
