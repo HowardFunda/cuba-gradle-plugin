@@ -78,16 +78,16 @@ class CubaEnhancingAction implements Action<Task> {
 
         def javaOutputDir = getEntityClassesDir()
 
-        log('[CubaEnhancing] Entity classes directory: ' + javaOutputDir.absolutePath)
+        project.logger.info('[CubaEnhancing] Entity classes directory: ' + javaOutputDir.absolutePath)
 
         def ownMetadataXmlFiles = getOwnMetadataXmlFiles()
-        log("[CubaEnhancing] Metadata XML files: ${ownMetadataXmlFiles}")
+        project.logger.info("[CubaEnhancing] Metadata XML files: ${ownMetadataXmlFiles}")
 
         if (!ownMetadataXmlFiles.isEmpty()) {
             File fullPersistenceXml = createFullPersistenceXml()
 
             if (javaOutputDir.exists()) {
-                log("[CubaEnhancing] Start EclipseLink enhancing")
+                project.logger.info("[CubaEnhancing] Start EclipseLink enhancing")
                 project.javaexec {
                     main = 'org.eclipse.persistence.tools.weaving.jpa.CubaStaticWeave'
                     classpath(
@@ -149,7 +149,7 @@ class CubaEnhancingAction implements Action<Task> {
 
         if (outputDir.exists()) {
             // run CUBA enhancing on all classes remaining in build/enhanced-classes
-            log("[CubaEnhancing] Start CUBA enhancing")
+            project.logger.info("[CubaEnhancing] Start CUBA enhancing")
 
             ClassPool pool = new ClassPool(null)
             pool.appendSystemPath()
@@ -158,10 +158,7 @@ class CubaEnhancingAction implements Action<Task> {
             pool.insertClassPath(outputDir.toString())
 
             def cubaEnhancer = new CubaEnhancer(pool, outputDir.toString())
-            allClasses.each { String name ->
-                println " >>> Enhanced class: $name"
-                cubaEnhancer.run(name)
-            }
+            allClasses.each { String name -> cubaEnhancer.run(name) }
         }
 
         return allClasses
@@ -176,7 +173,6 @@ class CubaEnhancingAction implements Action<Task> {
             Path srcFile = Paths.get("$enhancedDirPath/${classPath}.class")
             Path dstFile = Paths.get("$javaOutputDir/${classPath}.class")
 
-            // todo: check whether this situation is correct
             if (srcFile.toFile().exists() && dstFile.toFile().exists()) {
                 Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING)
             }
@@ -185,16 +181,12 @@ class CubaEnhancingAction implements Action<Task> {
         try {
             FileUtils.deleteDirectory(new File(enhancedDirPath))
         } catch (IOException ignored) {
-            // todo: log
+            project.logger.debug("Unable to remove directory with enhanced classes: $enhancedDirPath")
         }
     }
 
     private File getEntityClassesDir() {
         return customClassesDir ?: sourceSet.java.outputDir
-        /*if (customClassesDir) {
-            return customClassesDir
-        }
-        return sourceSet.java.outputDir*/
     }
 
     private List<File> getOwnPersistenceXmlFiles() {
@@ -253,7 +245,7 @@ class CubaEnhancingAction implements Action<Task> {
         }
         files.each { xmlFiles.add(it) }
 
-        log("[CubaEnhancing] Persistence XML files: $xmlFiles")
+        project.logger.info("[CubaEnhancing] Persistence XML files: $xmlFiles")
 
         def parser = new XmlParser()
         Node doc = null
@@ -283,7 +275,7 @@ class CubaEnhancingAction implements Action<Task> {
         }
 
         def string = XmlUtil.serialize(doc)
-        log('[CubaEnhancing] fullPersistenceXml:\n' + string)
+        project.logger.debug('[CubaEnhancing] fullPersistenceXml:\n' + string)
 
         def fullPersistenceXml = new File("$project.buildDir/tmp/persistence/META-INF/persistence.xml")
         fullPersistenceXml.parentFile.mkdirs()
@@ -335,10 +327,5 @@ class CubaEnhancingAction implements Action<Task> {
             fileTree.each { files.add(it) }
         }
         return files
-    }
-
-    // todo: enable correct logging
-    private void log(String message) {
-        println("$project.name $message")
     }
 }
